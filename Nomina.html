@@ -1,0 +1,1033 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquidación de Nómina</title>
+
+    <style>
+        :root {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --card-border: #dbe3ee;
+            --text-main: #172033;
+            --text-muted: #64748b;
+            --accent-green: #059669;
+            --accent-blue: #2563eb;
+            --accent-red: #dc2626;
+            --input-bg: #ffffff;
+            --input-border: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont,
+                "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1050px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 5px;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            color: var(--text-main);
+        }
+
+        .status-bar {
+            font-size: 0.85rem;
+            color: var(--accent-green);
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--accent-blue);
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-main);
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+            width: 100%;
+            min-width: 0;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.10);
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+            min-width: 720px;
+        }
+
+        th, td {
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--card-border);
+            vertical-align: middle;
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            color: var(--text-main);
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .val-devengado {
+            color: var(--accent-green);
+            font-weight: 500;
+        }
+
+        .val-deduccion {
+            color: var(--accent-red);
+            font-weight: 500;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+            border: 1px solid #bfdbfe;
+        }
+
+        .neto-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px dashed var(--card-border);
+            font-size: 1.2rem;
+            font-weight: bold;
+            gap: 10px;
+        }
+
+        .neto-val {
+            color: var(--accent-green);
+            font-size: 1.5rem;
+        }
+
+        .btn {
+            background-color: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-danger {
+            background-color: var(--accent-red);
+            padding: 6px 10px;
+            font-size: 0.8rem;
+        }
+
+        .btn-success {
+            background-color: var(--accent-green);
+        }
+
+        .totals-summary {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 15px;
+            align-items: flex-end;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            width: 300px;
+            max-width: 100%;
+            font-size: 0.95rem;
+            gap: 15px;
+        }
+
+        .campo-otros {
+            margin-top: 7px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .campo-otros input,
+        .campo-otros select {
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .card {
+                padding: 14px;
+            }
+
+            h1 {
+                font-size: 1.35rem;
+            }
+
+            .card-title {
+                font-size: 1rem;
+            }
+
+            .neto-container {
+                font-size: 1rem;
+            }
+
+            .neto-val {
+                font-size: 1.25rem;
+            }
+
+            .btn {
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>Liquidación de Nómina</h1>
+        <div class="status-bar">
+            <span>● Guardado automático activo</span>
+        </div>
+    </header>
+
+    <!-- Configuración de Salario -->
+    <div class="card summary-card">
+        <div class="card-title">Configuración de Salario</div>
+
+        <div class="input-group">
+            <label for="salarioMensualDisplay">
+                Salario Mensual Base ($)
+            </label>
+
+            <input
+                type="text"
+                id="salarioMensualDisplay"
+                value=""
+                placeholder="Ej: 0"
+                oninput="formatearSalarioInput(this)"
+                onblur="calcularNomina()"
+            >
+        </div>
+    </div>
+
+    <!-- Detalles del Pago de Nómina -->
+    <div class="card">
+
+        <div class="card-title">
+            <span>Detalle del Pago de Nómina</span>
+
+            <button
+                class="btn btn-success"
+                onclick="agregarFila()"
+            >
+                + Agregar Concepto
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table id="tablaNomina">
+
+                <thead>
+                    <tr>
+                        <th style="width: 32%;">Descripción Pago</th>
+                        <th style="width: 12%;">Cantidad / Valor</th>
+                        <th style="width: 14%;">Unidad</th>
+                        <th class="text-right" style="width: 18%;">Devengados</th>
+                        <th class="text-right" style="width: 18%;">Deducciones</th>
+                        <th style="width: 6%; text-align: center;">Acción</th>
+                    </tr>
+                </thead>
+
+                <tbody id="cuerpoTabla"></tbody>
+
+            </table>
+        </div>
+
+        <!-- Totales y Neto -->
+        <div class="totals-summary">
+
+            <div class="total-row">
+                <span>Subtotal Devengados:</span>
+                <span id="subDevengados" class="val-devengado">$0</span>
+            </div>
+
+            <div class="total-row">
+                <span>Subtotal Deducciones:</span>
+                <span id="subDeducciones" class="val-deduccion">$0</span>
+            </div>
+
+        </div>
+
+        <div class="neto-container">
+            <span>Neto Pagado:</span>
+            <span id="netoPagado" class="neto-val">$0</span>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    const STORAGE_KEY = 'nomina_app_data_v5';
+
+    // Conceptos disponibles
+    const opcionesDescripcion = [
+        "Salario basico",
+        "Recargo nocturno",
+        "Horas extras diur",
+        "Horas extras noct",
+        "Prima Legal de Servicio",
+        "Prima extralegal",
+        "Prima de antigüedad",
+        "Vacaciones Disfrutadas",
+        "Prima de Vacaciones",
+        "Intereses Cesantías",
+        "Beca esc secund Benef",
+        "Bonificacion CS",
+        "Descuento Salud",
+        "Descuento Pensión",
+        "Descuento Solidaridad",
+        "Cotrafa auxilio",
+        "Desc Compra Viv",
+        "Bonificacion MOD",
+        "Bonificacion SIS",
+        "Credito Cotrafa",
+        "Desc textos escolares",
+        "Otros"
+    ];
+
+    // Identificar deducciones
+    function esDeduccionConcepto(desc) {
+        if (!desc) return false;
+
+        return desc.includes("Descuento") ||
+               desc.includes("Desc ") ||
+               desc.includes("Credito") ||
+               desc.includes("Cotrafa");
+    }
+
+    // Filas iniciales
+    let filasIniciales = [
+        { desc: "Salario basico", cant: 15, unidad: "Días" },
+        { desc: "Descuento Salud", cant: "", unidad: "" },
+        { desc: "Descuento Pensión", cant: "", unidad: "" }
+    ];
+
+    // Formato monetario colombiano
+    function formatearCOP(valor) {
+        return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            maximumFractionDigits: 0
+        }).format(valor || 0);
+    }
+
+    // Protección de textos introducidos por el usuario
+    function escaparHTML(texto) {
+        return String(texto ?? '').replace(/[&<>"']/g, caracter => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[caracter]);
+    }
+
+    // Formatear salario
+    function formatearSalarioInput(input) {
+        let val = input.value.replace(/\D/g, '');
+
+        if (val) {
+            input.value = Number(val).toLocaleString('es-CO');
+        } else {
+            input.value = '';
+        }
+
+        calcularNomina();
+    }
+
+    // Obtener salario mensual
+    function obtenerSalarioMensual() {
+        const valStr = document.getElementById(
+            'salarioMensualDisplay'
+        ).value.replace(/\./g, '').replace(/,/g, '');
+
+        return parseFloat(valStr) || 0;
+    }
+
+    // Determinar unidad automática
+    function determinarUnidad(desc) {
+
+        const diasList = [
+            "Salario basico",
+            "Prima Legal de Servicio",
+            "Prima extralegal",
+            "Prima de antigüedad",
+            "Vacaciones Disfrutadas",
+            "Prima de Vacaciones"
+        ];
+
+        const horasList = [
+            "Recargo nocturno",
+            "Horas extras diur",
+            "Horas extras noct"
+        ];
+
+        if (diasList.includes(desc)) return "Días";
+        if (horasList.includes(desc)) return "Horas";
+
+        return "";
+    }
+
+    // Identificar conceptos con valor manual
+    function esConceptoManual(desc) {
+
+        const automaticos = [
+            "Salario basico",
+            "Recargo nocturno",
+            "Horas extras diur",
+            "Horas extras noct",
+            "Prima Legal de Servicio",
+            "Prima extralegal",
+            "Prima de antigüedad",
+            "Vacaciones Disfrutadas",
+            "Prima de Vacaciones",
+            "Descuento Salud",
+            "Descuento Pensión",
+            "Desc Compra Viv",
+            "Otros"
+        ];
+
+        return !automaticos.includes(desc);
+    }
+
+    // Obtener los datos actuales de la tabla
+    function obtenerDatosActualesFormulario() {
+
+        const tbody = document.getElementById('cuerpoTabla');
+        const rows = tbody.querySelectorAll('tr');
+
+        let filas = [];
+
+        rows.forEach((tr, index) => {
+
+            const desc = document.getElementById(
+                `desc_${index}`
+            ).value;
+
+            const cant = document.getElementById(
+                `cant_${index}`
+            ).value;
+
+            const unidad = document.getElementById(
+                `unidad_${index}`
+            ).value;
+
+            let detalle = "";
+            let tipo = "";
+
+            if (desc === "Otros") {
+
+                const detalleInput = document.getElementById(
+                    `detalleOtros_${index}`
+                );
+
+                const tipoInput = document.getElementById(
+                    `tipoOtros_${index}`
+                );
+
+                detalle = detalleInput ? detalleInput.value : "";
+                tipo = tipoInput ? tipoInput.value : "devengado";
+            }
+
+            filas.push({
+                desc,
+                cant,
+                unidad,
+                detalle,
+                tipo
+            });
+        });
+
+        return filas;
+    }
+
+    // Renderizar tabla
+    function renderizarTabla(datos) {
+
+        const tbody = document.getElementById('cuerpoTabla');
+
+        tbody.innerHTML = '';
+
+        // Ordenar devengados primero y deducciones después
+        datos.sort((a, b) => {
+
+            const aDed = a.desc === "Otros"
+                ? a.tipo === "deduccion"
+                : esDeduccionConcepto(a.desc);
+
+            const bDed = b.desc === "Otros"
+                ? b.tipo === "deduccion"
+                : esDeduccionConcepto(b.desc);
+
+            if (aDed === bDed) return 0;
+
+            return aDed ? 1 : -1;
+        });
+
+        datos.forEach((fila, index) => {
+
+            const tr = document.createElement('tr');
+
+            // Selector de conceptos
+            let selectHtml = `
+                <select
+                    onchange="cambiarDescripcion(${index})"
+                    id="desc_${index}"
+                >
+                    <option value="">
+                        -- Seleccione concepto --
+                    </option>
+            `;
+
+            opcionesDescripcion.forEach(op => {
+
+                const selected = op === fila.desc
+                    ? 'selected'
+                    : '';
+
+                selectHtml += `
+                    <option value="${escaparHTML(op)}" ${selected}>
+                        ${escaparHTML(op)}
+                    </option>
+                `;
+            });
+
+            selectHtml += `</select>`;
+
+            // Unidad
+            const unidadAuto = determinarUnidad(fila.desc);
+
+            const unidadVal =
+                fila.unidad !== undefined && fila.unidad !== ""
+                    ? fila.unidad
+                    : unidadAuto;
+
+            // Campo personalizado de Otros
+            let campoOtros = '';
+
+            if (fila.desc === "Otros") {
+
+                const detalle = fila.detalle || '';
+                const tipo = fila.tipo || 'devengado';
+
+                campoOtros = `
+                    <div class="campo-otros">
+
+                        <input
+                            type="text"
+                            id="detalleOtros_${index}"
+                            value="${escaparHTML(detalle)}"
+                            placeholder="Escriba el concepto"
+                            oninput="calcularNomina()"
+                        >
+
+                        <select
+                            id="tipoOtros_${index}"
+                            onchange="cambiarTipoOtros(${index})"
+                        >
+                            <option
+                                value="devengado"
+                                ${tipo === 'devengado' ? 'selected' : ''}
+                            >
+                                Devengado
+                            </option>
+
+                            <option
+                                value="deduccion"
+                                ${tipo === 'deduccion' ? 'selected' : ''}
+                            >
+                                Deducción
+                            </option>
+                        </select>
+
+                    </div>
+                `;
+            }
+
+            // Construcción de la fila
+            tr.innerHTML = `
+
+                <td>
+                    ${selectHtml}
+                    ${campoOtros}
+                </td>
+
+                <td>
+                    <input
+                        type="number"
+                        id="cant_${index}"
+                        value="${escaparHTML(fila.cant ?? '')}"
+                        style="width: 100%;"
+                        oninput="calcularNomina()"
+                        placeholder="0"
+                    >
+                </td>
+
+                <td>
+                    <input
+                        type="text"
+                        id="unidad_${index}"
+                        value="${escaparHTML(unidadVal)}"
+                        style="width: 100%;"
+                        oninput="guardarLocalStorage()"
+                    >
+                </td>
+
+                <td
+                    class="text-right val-devengado"
+                    id="devVal_${index}"
+                >-</td>
+
+                <td
+                    class="text-right val-deduccion"
+                    id="dedVal_${index}"
+                >-</td>
+
+                <td style="text-align: center;">
+                    <button
+                        class="btn btn-danger"
+                        onclick="eliminarFila(${index})"
+                    >
+                        X
+                    </button>
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+        });
+
+        calcularNomina();
+    }
+
+    // Cambiar descripción
+    function cambiarDescripcion(index) {
+
+        const filas = obtenerDatosActualesFormulario();
+
+        const nuevoDesc = document.getElementById(
+            `desc_${index}`
+        ).value;
+
+        filas[index].desc = nuevoDesc;
+
+        filas[index].unidad = determinarUnidad(nuevoDesc);
+
+        if (nuevoDesc === "Otros") {
+            filas[index].detalle = "";
+            filas[index].tipo = "devengado";
+        } else {
+            filas[index].detalle = "";
+            filas[index].tipo = "";
+        }
+
+        renderizarTabla(filas);
+    }
+
+    // Cambiar clasificación de Otros
+    function cambiarTipoOtros(index) {
+
+        const filas = obtenerDatosActualesFormulario();
+
+        const tipo = document.getElementById(
+            `tipoOtros_${index}`
+        ).value;
+
+        filas[index].tipo = tipo;
+
+        renderizarTabla(filas);
+    }
+
+    // Agregar fila
+    function agregarFila() {
+
+        const filas = obtenerDatosActualesFormulario();
+
+        filas.push({
+            desc: "",
+            cant: "",
+            unidad: "",
+            detalle: "",
+            tipo: ""
+        });
+
+        renderizarTabla(filas);
+    }
+
+    // Eliminar fila
+    function eliminarFila(index) {
+
+        let filas = obtenerDatosActualesFormulario();
+
+        filas.splice(index, 1);
+
+        renderizarTabla(filas);
+    }
+
+    // Guardar en LocalStorage
+    function guardarLocalStorage() {
+
+        try {
+
+            const data = {
+                salarioMensual: document.getElementById(
+                    'salarioMensualDisplay'
+                ).value,
+
+                filas: obtenerDatosActualesFormulario()
+            };
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(data)
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Error al guardar los datos:",
+                error
+            );
+        }
+    }
+
+    // Calcular nómina
+    function calcularNomina() {
+
+        const salarioMensual = obtenerSalarioMensual();
+
+        const quincenal = salarioMensual / 2;
+
+        // Jornada de 42 horas semanales
+        const valorHora = salarioMensual / 210;
+
+        const valorDia30 = salarioMensual / 30;
+
+        const tbody = document.getElementById('cuerpoTabla');
+
+        const rows = tbody.querySelectorAll('tr');
+
+        let subtotalDevengados = 0;
+        let subtotalDeducciones = 0;
+
+        // Primera pasada:
+        // Calcular los devengados para determinar la base
+        // de los descuentos de salud y pensión.
+
+        rows.forEach((tr, index) => {
+
+            const desc = document.getElementById(
+                `desc_${index}`
+            ).value;
+
+            const cant = parseFloat(
+                document.getElementById(`cant_${index}`).value
+            ) || 0;
+
+            if (desc === "Otros") {
+
+                const tipo = document.getElementById(
+                    `tipoOtros_${index}`
+                ).value;
+
+                if (tipo === "devengado") {
+                    subtotalDevengados += cant;
+                }
+
+            } else if (desc === "Salario basico") {
+
+                subtotalDevengados +=
+                    quincenal * (cant / 15);
+
+            } else if (desc === "Recargo nocturno") {
+
+                // Recargo nocturno del 35%
+                subtotalDevengados +=
+                    (valorHora * 0.35) * cant;
+
+            } else if (desc === "Horas extras diur") {
+
+                subtotalDevengados +=
+                    (valorHora * 1.25) * cant;
+
+            } else if (desc === "Horas extras noct") {
+
+                subtotalDevengados +=
+                    (valorHora * 1.75) * cant;
+
+            } else if ([
+                "Prima Legal de Servicio",
+                "Prima extralegal",
+                "Prima de antigüedad",
+                "Vacaciones Disfrutadas",
+                "Prima de Vacaciones"
+            ].includes(desc)) {
+
+                subtotalDevengados +=
+                    valorDia30 * cant;
+
+            } else if (
+                esConceptoManual(desc) &&
+                !esDeduccionConcepto(desc)
+            ) {
+
+                subtotalDevengados += cant;
+            }
+        });
+
+        // Segunda pasada:
+        // Calcular cada concepto y las deducciones.
+
+        rows.forEach((tr, index) => {
+
+            const desc = document.getElementById(
+                `desc_${index}`
+            ).value;
+
+            const cant = parseFloat(
+                document.getElementById(`cant_${index}`).value
+            ) || 0;
+
+            let dev = 0;
+            let ded = 0;
+
+            if (desc === "Otros") {
+
+                const tipo = document.getElementById(
+                    `tipoOtros_${index}`
+                ).value;
+
+                if (tipo === "devengado") {
+                    dev = cant;
+                } else {
+                    ded = cant;
+                }
+
+            } else if (desc === "Salario basico") {
+
+                dev = quincenal * (cant / 15);
+
+            } else if (desc === "Recargo nocturno") {
+
+                dev = (valorHora * 0.35) * cant;
+
+            } else if (desc === "Horas extras diur") {
+
+                dev = (valorHora * 1.25) * cant;
+
+            } else if (desc === "Horas extras noct") {
+
+                dev = (valorHora * 1.75) * cant;
+
+            } else if ([
+                "Prima Legal de Servicio",
+                "Prima extralegal",
+                "Prima de antigüedad",
+                "Vacaciones Disfrutadas",
+                "Prima de Vacaciones"
+            ].includes(desc)) {
+
+                dev = valorDia30 * cant;
+
+            } else if (desc === "Descuento Salud") {
+
+                ded = subtotalDevengados * 0.04;
+
+            } else if (desc === "Descuento Pensión") {
+
+                ded = subtotalDevengados * 0.04;
+
+            } else if (desc === "Desc Compra Viv") {
+
+                ded = (salarioMensual * 0.10) / 2;
+
+            } else if (esConceptoManual(desc)) {
+
+                if (esDeduccionConcepto(desc)) {
+                    ded = cant;
+                } else {
+                    dev = cant;
+                }
+            }
+
+            // Mostrar valores en la tabla
+            document.getElementById(
+                `devVal_${index}`
+            ).textContent = dev > 0
+                ? formatearCOP(dev)
+                : '-';
+
+            document.getElementById(
+                `dedVal_${index}`
+            ).textContent = ded > 0
+                ? formatearCOP(ded)
+                : '-';
+
+            subtotalDeducciones += ded;
+        });
+
+        // Resultado final
+        const neto = subtotalDevengados - subtotalDeducciones;
+
+        document.getElementById(
+            'subDevengados'
+        ).textContent = formatearCOP(subtotalDevengados);
+
+        document.getElementById(
+            'subDeducciones'
+        ).textContent = formatearCOP(subtotalDeducciones);
+
+        document.getElementById(
+            'netoPagado'
+        ).textContent = formatearCOP(neto);
+
+        guardarLocalStorage();
+    }
+
+    // Cargar datos al abrir la aplicación
+    window.addEventListener('DOMContentLoaded', () => {
+
+        try {
+
+            const saved = localStorage.getItem(STORAGE_KEY);
+
+            if (saved) {
+
+                const data = JSON.parse(saved);
+
+                if (data.salarioMensual !== undefined) {
+
+                    document.getElementById(
+                        'salarioMensualDisplay'
+                    ).value = data.salarioMensual;
+                }
+
+                if (data.filas && data.filas.length > 0) {
+
+                    renderizarTabla(data.filas);
+
+                    return;
+                }
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Error al cargar LocalStorage:",
+                error
+            );
+        }
+
+        renderizarTabla(filasIniciales);
+    });
+
+</script>
+
+</body>
+</html>
