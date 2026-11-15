@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evacuación 1.0 — Control de Producción</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#eef1f5;color:#18202a}
+  .app{max-width:1200px;margin:24px auto;padding:0 18px}
+  header{background:#17212b;color:white;border-radius:16px;padding:20px 24px;margin-bottom:18px}
+  header h1{margin:0;font-size:28px} header p{margin:6px 0 0;color:#b9c5d0}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .card{background:white;border-radius:14px;padding:18px;box-shadow:0 3px 12px #00000012}
+  .label{font-size:13px;color:#686c6e;font-weight:600;margin-bottom:8px}
+  .value{font-size:28px;font-weight:700}
+  .wide{grid-column:span 2}
+  .cycle{text-align:center}
+  .cycle-time{font-size:64px;font-variant-numeric:tabular-nums;font-weight:700;margin:12px 0}
+  button{border:0;border-radius:10px;padding:11px 18px;margin:4px;font-size:15px;font-weight:700;cursor:pointer}
+  .primary{background:#1f6feb;color:white}.secondary{background:#e7ebf0;color:#18202a}
+  .danger{background:#b42318;color:white}
+  .inputs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  input, select{width:100%;padding:10px;border:1px solid #cbd3dc;border-radius:8px;font-size:16px;background:white}
+  .status{margin-top:12px;font-size:13px;color:#687583}
+  @media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}.wide{grid-column:span 2}}
+  @media(max-width:520px){.grid,.inputs{grid-template-columns:1fr}.wide{grid-column:span 1}.cycle-time{font-size:48px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <h1>EVACUACIÓN 1.0</h1>
+  <p>Control de producción — cabinas / vehículos</p>
+</header>
+
+<div class="grid">
+  <div class="card">
+    <div class="label">HORA ACTUAL</div>
+    <div class="value" id="horaActual">--:--:--</div>
+  </div>
+  <div class="card">
+    <div class="label" id="labelEvacuacionTitulo">HORA EVACUACIÓN MASTIC</div>
+    <div class="value" id="horaEvacuacion">22:45:00</div>
+  </div>
+  <div class="card">
+    <div class="label">HORA REAL DE FINALIZACIÓN</div>
+    <div class="value" id="horaFinReal">--:--:--</div>
+  </div>
+  <div class="card">
+    <div class="label">TIEMPO RESTANTE</div>
+    <div class="value" id="tiempoRestante">--:--:--</div>
+  </div>
+
+  <div class="card">
+    <div class="label">CABINAS RESTANTES</div>
+    <div class="value" id="cabinasRestantes">0</div>
+  </div>
+  <div class="card">
+    <div class="label">CABINA EN P00</div>
+    <div class="value" id="cabinaP00">1</div>
+  </div>
+  <div class="card">
+    <div class="label">CABINA QUE QUEDA EN P00</div>
+    <div class="value" id="cabinaQueda">0</div>
+  </div>
+  <div class="card">
+    <div class="label">ÚLTIMA CABINA POR SURFACER</div>
+    <div class="value" id="ultimaSurfacer">0</div>
+  </div>
+
+  <div class="card">
+    <div class="label">ÚLTIMA CABINA PARA TTS</div>
+    <div class="value" id="ultimaTTS">0</div>
+  </div>
+  <div class="card">
+    <div class="label">STOCK CATAFORESIS</div>
+    <div class="value" id="stock">45</div>
+  </div>
+  <div class="card">
+    <div class="label">SKIDS VACÍOS</div>
+    <div class="value" id="skids">2</div>
+  </div>
+  
+  <div class="card wide cycle">
+    <div class="label">TIEMPO DE CICLO — 280 SEGUNDOS (04:40)</div>
+    <div class="cycle-time" id="ciclo">00:00</div>
+    <button class="primary" onclick="iniciar()">INICIAR</button>
+    <button class="secondary" onclick="detener()">DETENER</button>
+    <button class="danger" onclick="reiniciarCiclo()">↻ REINICIAR CICLO</button>
+    <div class="status" id="estado">En marcha (Automático)</div>
+  </div>
+
+  <div class="card wide">
+    <div class="label">DATOS DE OPERACIÓN Y MODO DE CONTROL</div>
+    <div class="inputs">
+      <div>
+        <label>Modo de Control</label>
+        <select id="modoControl" onchange="cambiarModo()">
+          <option value="mastic">Por Hora Mastic</option>
+          <option value="surfacer">Por Última Surfacer</option>
+        </select>
+      </div>
+      <div id="contenedorMastic">
+        <label>Hora evacuación Mastic</label>
+        <input id="inputHora" type="time" value="22:45">
+      </div>
+      <div id="contenedorSurfacer" style="display:none;">
+        <label>Última cabina Surfacer</label>
+        <input id="inputSurfacerTarget" type="number" value="100">
+      </div>
+      <div>
+        <label>Cabina en P00</label>
+        <input id="inputP00" type="number" value="1">
+      </div>
+      <div>
+        <label>Stock cataforesis</label>
+        <input id="inputStock" type="number" value="45">
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const CICLO_SEG = 280;
+const STOCK_CATAFORESIS_BASE = 47;
+const STOCK_TTS_OFFSET = 28;
+const SURFACER_OFFSET = 14;
+const MARGEN_MAX_MASTIC_MS = 60 * 1000; // 1 minuto máximo de tolerancia sobre Mastic
+
+let cicloSeg = 0;
+let relojActivo = true;
+let ultimoTick = performance.now();
+let cabinasSumadasPorCiclo = 0;
+let baseCabinasRestantes = 0;
+let finProduccionMs = null;
+let finBaseAntesDeParoMs = null;
+let tiempoInicioParoMs = null;
+
+function pad(n){ return String(n).padStart(2,'0'); }
+
+function formato(seg){
+  seg = Math.max(0, Math.floor(seg));
+  return `${pad(Math.floor(seg/60))}:${pad(seg%60)}`;
+}
+
+function formatoHMS(seg){
+  seg = Math.max(0, Math.floor(seg));
+  return `${pad(Math.floor(seg/3600))}:${pad(Math.floor((seg%3600)/60))}:${pad(seg%60)}`;
+}
+
+function obtenerP00Inicial(){
+  return Number(document.getElementById('inputP00').value) || 0;
+}
+
+function obtenerStock(){
+  return Number(document.getElementById('inputStock').value) || 0;
+}
+
+function obtenerP00Actual(){
+  return obtenerP00Inicial() + cabinasSumadasPorCiclo;
+}
+
+function vehiculosCompletosDisponibles(segundos){
+  return Math.max(0, Math.floor(segundos / CICLO_SEG));
+}
+
+function calcularDestinoMastic(now){
+  const hora = document.getElementById('inputHora').value || '22:45';
+  const [h,m] = hora.split(':').map(Number);
+  const destino = new Date(now);
+  destino.setHours(h,m,0,0);
+  if(destino <= now) destino.setDate(destino.getDate()+1);
+  return destino;
+}
+
+function cambiarModo(){
+  const modo = document.getElementById('modoControl').value;
+
+  if(modo === 'mastic'){
+    document.getElementById('contenedorMastic').style.display = 'block';
+    document.getElementById('contenedorSurfacer').style.display = 'none';
+    document.getElementById('labelEvacuacionTitulo').textContent = 'HORA EVACUACIÓN MASTIC';
+  }else{
+    document.getElementById('contenedorMastic').style.display = 'none';
+    document.getElementById('contenedorSurfacer').style.display = 'block';
+    document.getElementById('labelEvacuacionTitulo').textContent = 'OBJETIVO ÚLTIMA SURFACER';
+    const ultimaActual = Number(document.getElementById('ultimaSurfacer').textContent) || 100;
+    document.getElementById('inputSurfacerTarget').value = ultimaActual;
+  }
+
+  actualizarMetasProduccion();
+}
+
+function calcularTiempoTrabajoRestante(){
+  const modo = document.getElementById('modoControl').value;
+  let vehiculosRestantes = 0;
+
+  if(modo === 'mastic'){
+    vehiculosRestantes = Math.max(0, baseCabinasRestantes - cabinasSumadasPorCiclo);
+  }else{
+    const p00Actual = obtenerP00Actual();
+    const ultimaSurf = Number(document.getElementById('inputSurfacerTarget').value) || 0;
+    const queda = ultimaSurf + SURFACER_OFFSET;
+    vehiculosRestantes = Math.max(0, Math.round(queda - p00Actual));
+  }
+
+  const pendienteCiclo = vehiculosRestantes > 0
+    ? Math.max(0, CICLO_SEG - cicloSeg)
+    : 0;
+
+  return vehiculosRestantes * CICLO_SEG + pendienteCiclo;
+}
+
+function validarLimiteMastic(now){
+  const modo = document.getElementById('modoControl').value;
+  if(modo !== 'mastic' || finProduccionMs === null) return false;
+
+  const destinoMasticMs = calcularDestinoMastic(now).getTime();
+  const limiteMaximoMs = destinoMasticMs + MARGEN_MAX_MASTIC_MS;
+  let huboAjuste = false;
+
+  // Si la hora real de finalización supera por más de 1 minuto la hora Mastic,
+  // se descuentan cabinas restantes hasta volver dentro del margen permitido.
+  while(finProduccionMs > limiteMaximoMs && (baseCabinasRestantes - cabinasSumadasPorCiclo) > 0){
+    baseCabinasRestantes--;
+    huboAjuste = true;
+
+    const nuevoTrabajoRestanteMs = calcularTiempoTrabajoRestante() * 1000;
+    if(!relojActivo && tiempoInicioParoMs !== null){
+      const tiempoParadoMs = Date.now() - tiempoInicioParoMs;
+      finBaseAntesDeParoMs = tiempoInicioParoMs + nuevoTrabajoRestanteMs;
+      finProduccionMs = finBaseAntesDeParoMs + tiempoParadoMs;
+    }else{
+      finProduccionMs = Date.now() + nuevoTrabajoRestanteMs;
+    }
+  }
+
+  return huboAjuste;
+}
+
+function recalcularFinProduccion(){
+  const ahoraMs = Date.now();
+  const trabajoRestanteMs = calcularTiempoTrabajoRestante() * 1000;
+
+  if(!relojActivo && tiempoInicioParoMs !== null){
+    finBaseAntesDeParoMs = tiempoInicioParoMs + trabajoRestanteMs;
+    finProduccionMs = finBaseAntesDeParoMs + (ahoraMs - tiempoInicioParoMs);
+  }else{
+    finProduccionMs = ahoraMs + trabajoRestanteMs;
+    finBaseAntesDeParoMs = finProduccionMs;
+  }
+
+  validarLimiteMastic(new Date(ahoraMs));
+}
+
+function iniciar(){
+  if(relojActivo) return;
+
+  const ahoraMs = Date.now();
+
+  if(finBaseAntesDeParoMs !== null && tiempoInicioParoMs !== null){
+    finProduccionMs = finBaseAntesDeParoMs + (ahoraMs - tiempoInicioParoMs);
+  }else{
+    recalcularFinProduccion();
+  }
+
+  relojActivo = true;
+  ultimoTick = performance.now();
+  tiempoInicioParoMs = null;
+  finBaseAntesDeParoMs = null;
+  document.getElementById('estado').textContent = 'En marcha';
+  actualizarPantallaEstatica();
+}
+
+function detener(){
+  if(!relojActivo) return;
+
+  const ahoraMs = Date.now();
+  finBaseAntesDeParoMs = ahoraMs + calcularTiempoTrabajoRestante() * 1000;
+  finProduccionMs = finBaseAntesDeParoMs;
+  relojActivo = false;
+  tiempoInicioParoMs = ahoraMs;
+  document.getElementById('estado').textContent = 'Detenido (Paro de línea — hora fin rodando)';
+  actualizarPantallaEstatica();
+}
+
+function reiniciarCiclo(){
+  cicloSeg = 0;
+  relojActivo = true;
+  ultimoTick = performance.now();
+  tiempoInicioParoMs = null;
+  finBaseAntesDeParoMs = null;
+  recalcularFinProduccion();
+  document.getElementById('ciclo').textContent = '00:00';
+  document.getElementById('estado').textContent = 'Ciclo reiniciado y en marcha';
+  actualizarPantallaEstatica();
+}
+
+function actualizarMetasProduccion(){
+  if(!relojActivo){
+    tiempoInicioParoMs = Date.now();
+  }else{
+    tiempoInicioParoMs = null;
+    finBaseAntesDeParoMs = null;
+  }
+  inicializarDatosProduccion();
+}
+
+function reiniciarTurnoCompleto(){
+  cabinasSumadasPorCiclo = 0;
+  cicloSeg = 0;
+  ultimoTick = performance.now();
+  tiempoInicioParoMs = relojActivo ? null : Date.now();
+  finBaseAntesDeParoMs = null;
+  inicializarDatosProduccion();
+}
+
+function inicializarDatosProduccion(){
+  const now = new Date();
+  const modo = document.getElementById('modoControl').value;
+  const p00Actual = obtenerP00Actual();
+
+  if(modo === 'mastic'){
+    const hora = document.getElementById('inputHora').value || '22:45';
+    document.getElementById('horaEvacuacion').textContent = hora + ':00';
+
+    const destino = calcularDestinoMastic(now);
+    const restante = Math.max(0, (destino - now) / 1000);
+
+    baseCabinasRestantes = vehiculosCompletosDisponibles(restante);
+  }else{
+    const ultimaSurf = Number(document.getElementById('inputSurfacerTarget').value) || 0;
+    document.getElementById('horaEvacuacion').textContent = 'SURFACER';
+    const queda = ultimaSurf + SURFACER_OFFSET;
+    baseCabinasRestantes = Math.max(0, Math.round(queda - p00Actual));
+  }
+
+  recalcularFinProduccion();
+  actualizarPantallaEstatica();
+}
+
+function actualizarHoraFinReal(){
+  if(finProduccionMs === null) recalcularFinProduccion();
+
+  const fechaFinReal = new Date(finProduccionMs);
+
+  document.getElementById('horaFinReal').textContent =
+    `${pad(fechaFinReal.getHours())}:${pad(fechaFinReal.getMinutes())}:${pad(fechaFinReal.getSeconds())}`;
+}
+
+function actualizarPantallaEstatica(){
+  const modo = document.getElementById('modoControl').value;
+  const p00Actual = obtenerP00Actual();
+  const stock = obtenerStock();
+
+  document.getElementById('stock').textContent = stock;
+  document.getElementById('skids').textContent =
+    Math.max(0, STOCK_CATAFORESIS_BASE - stock);
+
+  const cabinasRestantesEfectivas =
+    Math.max(0, baseCabinasRestantes - cabinasSumadasPorCiclo);
+
+  document.getElementById('cabinasRestantes').textContent =
+    cabinasRestantesEfectivas;
+
+  let queda = 0;
+  let ultimaSurf = 0;
+
+  if(modo === 'mastic'){
+    queda = Math.round(p00Actual + cabinasRestantesEfectivas);
+    ultimaSurf = Math.round(queda - SURFACER_OFFSET);
+  }else{
+    ultimaSurf = Number(document.getElementById('inputSurfacerTarget').value) || 0;
+    queda = Math.round(ultimaSurf + SURFACER_OFFSET);
+  }
+
+  document.getElementById('cabinaP00').textContent = p00Actual;
+  document.getElementById('cabinaQueda').textContent = queda;
+  document.getElementById('ultimaSurfacer').textContent = ultimaSurf;
+
+  document.getElementById('ultimaTTS').textContent =
+    Math.round(queda - (stock - STOCK_TTS_OFFSET));
+
+  actualizarHoraFinReal();
+}
+
+function tick(){
+  const ahora = performance.now();
+  const now = new Date();
+
+  if(relojActivo){
+    cicloSeg += (ahora - ultimoTick) / 1000;
+    ultimoTick = ahora;
+
+    while(cicloSeg >= CICLO_SEG){
+      cicloSeg -= CICLO_SEG;
+      cabinasSumadasPorCiclo++;
+
+      document.getElementById('estado').textContent =
+        'Ciclo completado: +1 cabina procesada';
+
+      recalcularFinProduccion();
+      actualizarPantallaEstatica();
+    }
+  }else{
+    ultimoTick = ahora;
+
+    // 1. Mientras el ciclo está detenido, la hora real de finalización rueda en tiempo real.
+    if(finBaseAntesDeParoMs !== null && tiempoInicioParoMs !== null){
+      const tiempoParoTranscurridoMs = Date.now() - tiempoInicioParoMs;
+      finProduccionMs = finBaseAntesDeParoMs + tiempoParoTranscurridoMs;
+
+      // 2. Si supera por más de 1 minuto la hora de evacuación Mastic, recalcula cabinas restantes.
+      if(validarLimiteMastic(now)){
+        document.getElementById('estado').textContent =
+          'Paro prolongado (>1 min sobre Mastic): cabinas restantes recalculadas';
+        actualizarPantallaEstatica();
+      }
+    }
+  }
+
+  document.getElementById('horaActual').textContent =
+    `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+  const modo = document.getElementById('modoControl').value;
+
+  if(modo === 'mastic'){
+    const destino = calcularDestinoMastic(now);
+    const restante = Math.max(0, (destino - now) / 1000);
+    document.getElementById('tiempoRestante').textContent = formatoHMS(restante);
+  }else{
+    document.getElementById('tiempoRestante').textContent =
+      formatoHMS(calcularTiempoTrabajoRestante());
+  }
+
+  document.getElementById('ciclo').textContent = formato(cicloSeg);
+  actualizarHoraFinReal();
+
+  requestAnimationFrame(tick);
+}
+
+// Event listeners
+document.getElementById('inputHora').addEventListener(
+  'change',
+  actualizarMetasProduccion
+);
+
+document.getElementById('inputSurfacerTarget').addEventListener(
+  'input',
+  actualizarMetasProduccion
+);
+
+document.getElementById('inputStock').addEventListener(
+  'input',
+  () => {
+    const stock = obtenerStock();
+
+    document.getElementById('stock').textContent = stock;
+    document.getElementById('skids').textContent =
+      Math.max(0, STOCK_CATAFORESIS_BASE - stock);
+
+    const queda = Number(document.getElementById('cabinaQueda').textContent) || 0;
+    document.getElementById('ultimaTTS').textContent =
+      Math.round(queda - (stock - STOCK_TTS_OFFSET));
+  }
+);
+
+document.getElementById('inputP00').addEventListener(
+  'change',
+  reiniciarTurnoCompleto
+);
+
+inicializarDatosProduccion();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
