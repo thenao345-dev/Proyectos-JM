@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#102c4a"><title>Mis movimientos Bancolombia</title>
+<style>
+:root{--navy:#102c4a;--blue:#1769aa;--green:#16845b;--red:#c33d45;--bg:#f3f6fa;--card:#fff;--muted:#637083;--line:#e1e7ef}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#182435}
+header{background:linear-gradient(135deg,#102c4a,#1a5784);color:white;padding:22px 16px 28px;border-radius:0 0 22px 22px}
+.wrap{max-width:980px;margin:auto}header h1{font-size:23px;margin:0 0 4px}header p{margin:0;color:#d8e6f4;font-size:13px}
+main{max-width:980px;margin:-14px auto 36px;padding:0 13px}.balance{background:white;border-radius:17px;padding:18px;box-shadow:0 7px 22px #17395b12;margin-bottom:14px}
+.eyebrow{font-size:12px;color:var(--muted);font-weight:650;letter-spacing:.04em;text-transform:uppercase}.balance-value{font-size:clamp(28px,6vw,38px);font-weight:800;letter-spacing:-1px;margin:3px 0 14px;color:var(--navy)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#f5f8fb;border-radius:12px;padding:11px}.stat small{display:block;color:var(--muted);font-size:12px}.stat strong{font-size:16px}.positive{color:var(--green)}.negative{color:var(--red)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 3px 12px #17395b08}
+h2{font-size:17px;margin:0 0 13px;color:var(--navy)}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}label{font-size:12px;font-weight:700;color:#4a596b}
+input,select{font:inherit;font-size:16px;min-width:0;width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:white;color:#182435}input:focus,select:focus{outline:2px solid #8cc5f3;border-color:#1769aa}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:8px}.typebtn{border:1px solid #cbd5e1;border-radius:10px;padding:11px;background:white;font-weight:750;color:#4a596b}.typebtn.active.credit{background:#e6f6ef;border-color:#16845b;color:#126d4a}.typebtn.active.debit{background:#fff0f0;border-color:#c33d45;color:#a72d35}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.btn{border:0;border-radius:10px;padding:12px 15px;font:inherit;font-weight:750;cursor:pointer}.primary{background:var(--blue);color:white;flex:1}.secondary{background:#eaf0f6;color:var(--navy)}.danger{background:#fff0f0;color:#a72d35}.hint{font-size:12px;color:var(--muted);margin:10px 0 0}
+.toolbar{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}.toolbar input{grid-column:1/-1}
+.list{display:flex;flex-direction:column;gap:8px}.movement{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+.m-desc{font-weight:750;overflow-wrap:anywhere}.meta{font-size:12px;color:var(--muted);margin-top:4px}.pill{display:inline-block;font-size:11px;font-weight:750;background:#edf2f7;color:#4b5a6b;padding:3px 7px;border-radius:20px;margin-right:5px}.amount{text-align:right;font-weight:800;white-space:nowrap}.rowactions{display:flex;justify-content:flex-end;gap:5px;margin-top:6px}.tiny{font-size:11px;border:0;border-radius:7px;padding:5px 8px;background:#edf2f7;color:#334155}
+.empty{text-align:center;padding:26px;color:var(--muted)}.footer{font-size:12px;color:var(--muted);text-align:center;padding:8px 10px 24px}
+@media(min-width:700px){.layout{display:grid;grid-template-columns: minmax(320px,.85fr) minmax(0,1.15fr);gap:14px;align-items:start}.layout .card{margin-bottom:14px}.stats{grid-template-columns:1fr 1fr}}
+@media(max-width:420px){.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}.movement{padding:10px}.amount{font-size:14px}}
+</style></head>
+<body>
+<header><div class="wrap"><h1>Mis movimientos</h1><p>Control personal · Bancolombia</p></div></header>
+<main>
+<section class="balance">
+ <div class="eyebrow">Saldo general calculado</div><div id="balance" class="balance-value">$0</div>
+ <div class="stats"><div class="stat"><small>Total créditos</small><strong id="credits" class="positive">$0</strong></div><div class="stat"><small>Total débitos</small><strong id="debits" class="negative">$0</strong></div></div>
+ <p class="hint" id="saveStatus">Guardado automático activado en este dispositivo.</p>
+</section>
+<div class="layout">
+<section class="card">
+<h2 id="formTitle">Registrar movimiento</h2>
+<form id="movementForm">
+<div class="formgrid">
+ <div class="field"><label for="date">Fecha</label><input id="date" type="date" required></div>
+ <div class="field"><label for="category">Categoría</label><select id="category" required><option>Compra</option><option>Pago</option><option>Transferencia</option><option>Traslado</option><option>Retiro</option><option>Abono</option><option>Ajuste</option><option>Otros</option></select></div>
+ <div class="field full"><label for="description">Descripción</label><input id="description" maxlength="140" placeholder="Ej. Mercado, nómina, transferencia..." required></div>
+ <div class="field full"><label for="amount">Valor (COP)</label><input id="amount" type="text" inputmode="numeric" placeholder="Ej. 25.000" required></div>
+ <div class="field full"><label>Tipo de movimiento</label><div class="types"><button type="button" class="typebtn active credit" data-type="Crédito">＋ Crédito</button><button type="button" class="typebtn debit" data-type="Débito">− Débito</button></div></div>
+</div>
+<div class="actions"><button class="btn primary" type="submit" id="submitBtn">Guardar movimiento</button><button class="btn secondary" type="button" id="cancelEdit" hidden>Cancelar edición</button></div>
+</form>
+<p class="hint">Crédito suma al saldo; débito resta. Los datos se guardan automáticamente en el navegador.</p>
+</section>
+<section class="card">
+<h2>Historial de movimientos</h2>
+<div class="toolbar"><input id="search" type="search" placeholder="Buscar descripción o categoría"><select id="filterType"><option value="">Todos los tipos</option><option>Crédito</option><option>Débito</option></select><select id="filterCategory"><option value="">Todas las categorías</option><option>Compra</option><option>Pago</option><option>Transferencia</option><option>Traslado</option><option>Abono</option><option>Ajuste</option></select></div>
+<div id="movementList" class="list"></div>
+<div class="actions"><button class="btn secondary" id="exportCsv" type="button">Exportar CSV</button><button class="btn secondary" id="backup" type="button">Copia de seguridad</button><label class="btn secondary" for="restoreFile" style="cursor:pointer;text-align:center">Restaurar copia</label><input id="restoreFile" type="file" accept=".json,application/json" hidden></div>
+<p class="hint">Recomendación: guarda una copia de seguridad periódicamente. Los datos del navegador no se sincronizan automáticamente entre dispositivos.</p>
+</section></div>
+<div class="footer">Tus registros se guardan en este navegador. No se envían a ningún servidor.</div>
+</main>
+<script>
+const STORAGE_KEY='bancolombia_movimientos_v1';
+const INITIAL_DATA=[];
+const $=id=>document.getElementById(id);
+let movements=[];
+let selectedType='Crédito';
+let editingId=null;
+const money=n=>new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n||0);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// Formato de moneda en tiempo real para el input de valor
+$('amount').addEventListener('input',e=>{
+ let val=e.target.value.replace(/\D/g,'');
+ if(!val){e.target.value='';return;}
+ e.target.value=new Intl.NumberFormat('es-CO').format(parseInt(val,10));
+});
+
+function loadData(){
+ try{const saved=localStorage.getItem(STORAGE_KEY);movements=saved?JSON.parse(saved):INITIAL_DATA.map((m,i)=>({...m,id:'old-'+i}));}
+ catch(e){movements=INITIAL_DATA.map((m,i)=>({...m,id:'old-'+i}));}
+ saveData(false);
+}
+function saveData(show=true){
+ try{localStorage.setItem(STORAGE_KEY,JSON.stringify(movements));if(show){$('saveStatus').textContent='✓ Guardado automáticamente';}}
+ catch(e){$('saveStatus').textContent='No se pudo guardar. Exporta una copia de seguridad.';}
+}
+function setType(type){selectedType=type;document.querySelectorAll('.typebtn').forEach(b=>{b.classList.toggle('active',b.dataset.type===type)});document.querySelectorAll('.typebtn').forEach(b=>{b.classList.toggle('credit',b.dataset.type==='Crédito');b.classList.toggle('debit',b.dataset.type==='Débito')});}
+document.querySelectorAll('.typebtn').forEach(b=>b.addEventListener('click',()=>setType(b.dataset.type)));
+function totals(){let credits=0,debits=0;movements.forEach(m=>{if(m.type==='Crédito')credits+=Number(m.amount)||0;else debits+=Number(m.amount)||0});return{credits,debits,balance:credits-debits};}
+function render(){
+ const t=totals();$('balance').textContent=money(t.balance);$('credits').textContent=money(t.credits);$('debits').textContent=money(t.debits);
+ const q=$('search').value.trim().toLocaleLowerCase('es-CO'),ft=$('filterType').value,fc=$('filterCategory').value;
+ const list=movements.filter(m=>(!q||(m.description+' '+m.category).toLocaleLowerCase('es-CO').includes(q))&&(!ft||m.type===ft)&&(!fc||m.category===fc)).slice().sort((a,b)=>b.date.localeCompare(a.date)||String(b.id).localeCompare(String(a.id)));
+ if(!list.length){$('movementList').innerHTML='<div class="empty">No hay movimientos que coincidan.</div>';return;}
+ $('movementList').innerHTML=list.map(m=>`<article class="movement"><div><div class="m-desc">${esc(m.description)}</div><div class="meta">${esc(m.date)} · <span class="pill">${esc(m.category)}</span></div></div><div><div class="amount ${m.type==='Crédito'?'positive':'negative'}">${m.type==='Crédito'?'+':'−'} ${money(m.amount)}</div><div class="rowactions"><button class="tiny" data-edit="${esc(m.id)}">Editar</button><button class="tiny" data-delete="${esc(m.id)}">Eliminar</button></div></div></article>`).join('');
+ document.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>editMovement(b.dataset.edit)));
+ document.querySelectorAll('[data-delete]').forEach(b=>b.addEventListener('click',()=>deleteMovement(b.dataset.delete)));
+}
+function resetForm(){editingId=null;$('movementForm').reset();$('date').value=new Date().toLocaleDateString('en-CA');setType('Crédito');$('formTitle').textContent='Registrar movimiento';$('submitBtn').textContent='Guardar movimiento';$('cancelEdit').hidden=true;}
+$('movementForm').addEventListener('submit',e=>{
+ e.preventDefault();const amount=Math.round(Number($('amount').value.replace(/\D/g,'')));
+ if(!Number.isFinite(amount)||amount<=0){alert('Ingresa un valor mayor que cero.');return;}
+ const item={id:editingId||('m-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)),date:$('date').value,category:$('category').value,description:$('description').value.trim(),type:selectedType,amount};
+ if(!item.date||!item.description){alert('Completa la fecha y la descripción.');return;}
+ if(editingId){movements=movements.map(m=>m.id===editingId?item:m);}else{movements.push(item);}
+ saveData();render();resetForm();
+});
+function editMovement(id){const m=movements.find(x=>String(x.id)===String(id));if(!m)return;editingId=m.id;$('date').value=m.date;$('category').value=m.category;$('description').value=m.description;$('amount').value=new Intl.NumberFormat('es-CO').format(m.amount);setType(m.type);$('formTitle').textContent='Editar movimiento';$('submitBtn').textContent='Guardar cambios';$('cancelEdit').hidden=false;window.scrollTo({top:0,behavior:'smooth'});}
+function deleteMovement(id){const m=movements.find(x=>String(x.id)===String(id));if(!m)return;if(confirm('¿Eliminar este movimiento? Esta acción no se puede deshacer.')){movements=movements.filter(x=>String(x.id)!==String(id));saveData();render();if(String(editingId)===String(id))resetForm();}}
+$('cancelEdit').addEventListener('click',resetForm);
+['search','filterType','filterCategory'].forEach(id=>$(id).addEventListener('input',render));
+function download(filename,content,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+$('backup').addEventListener('click',()=>download('respaldo_bancolombia_'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(movements,null,2),'application/json'));
+$('exportCsv').addEventListener('click',()=>{const lines=[['Fecha','Categoría','Descripción','Tipo de movimiento','Valor','Impacto en saldo'],...movements.map(m=>[m.date,m.category,m.description,m.type,m.amount,m.type==='Crédito'?m.amount:-m.amount])];const csv='\uFEFF'+lines.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');download('movimientos_bancolombia.csv',csv,'text/csv;charset=utf-8');});
+$('restoreFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!Array.isArray(data)||!data.every(m=>m.date&&m.category&&m.type&&Number(m.amount)>0))throw new Error();if(confirm('Restaurar esta copia reemplazará los movimientos actuales. ¿Continuar?')){movements=data;saveData();render();resetForm();}}catch(err){alert('El archivo no parece ser una copia válida de esta app.');}e.target.value='';});
+loadData();resetForm();render();
+</script></body></html>
