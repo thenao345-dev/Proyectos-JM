@@ -805,7 +805,7 @@
         const quincenal = salarioMensual / 2;
 
         // Jornada de 42 horas semanales
-        const valorHora = salarioMensual / 210;
+        const valorHora = salarioMensual / 303.35;
 
         const valorDia30 = salarioMensual / 30;
 
@@ -998,30 +998,19 @@
             const saved = localStorage.getItem(STORAGE_KEY);
 
             if (saved) {
-
                 const data = JSON.parse(saved);
 
-                if (data.salarioMensual !== undefined) {
+                const salarioInput = document.getElementById('salarioMensualDisplay');
+                salarioInput.value = data.salarioMensual || '';
 
-                    document.getElementById(
-                        'salarioMensualDisplay'
-                    ).value = data.salarioMensual;
-                }
+                const filas = data.filas || filasIniciales;
+                renderizarTabla(filas);
 
-                if (data.filas && data.filas.length > 0) {
-
-                    renderizarTabla(data.filas);
-
-                    return;
-                }
+                return;
             }
 
         } catch (error) {
-
-            console.error(
-                "Error al cargar LocalStorage:",
-                error
-            );
+            console.warn('No se pudieron cargar datos guardados:', error);
         }
 
         renderizarTabla(filasIniciales);
