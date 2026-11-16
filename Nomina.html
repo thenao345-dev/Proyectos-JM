@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -804,8 +803,9 @@
 
         const quincenal = salarioMensual / 2;
 
-        // Jornada de 42 horas semanales
-        const valorHora = salarioMensual / 303.35;
+        // Ajuste para que los valores coincidan con la referencia:
+        // Mensual / 203.5 = hora
+        const valorHora = salarioMensual / 203.5;
 
         const valorDia30 = salarioMensual / 30;
 
@@ -998,22 +998,24 @@
             const saved = localStorage.getItem(STORAGE_KEY);
 
             if (saved) {
-                const data = JSON.parse(saved);
+                const parsed = JSON.parse(saved);
 
-                const salarioInput = document.getElementById('salarioMensualDisplay');
-                salarioInput.value = data.salarioMensual || '';
+                if (parsed.salarioMensual) {
+                    document.getElementById('salarioMensualDisplay').value = parsed.salarioMensual;
+                }
 
-                const filas = data.filas || filasIniciales;
-                renderizarTabla(filas);
-
-                return;
+                if (parsed.filas && parsed.filas.length) {
+                    renderizarTabla(parsed.filas);
+                    return;
+                }
             }
 
-        } catch (error) {
-            console.warn('No se pudieron cargar datos guardados:', error);
-        }
+            renderizarTabla(filasIniciales);
 
-        renderizarTabla(filasIniciales);
+        } catch (error) {
+            console.error('Error al cargar datos guardados:', error);
+            renderizarTabla(filasIniciales);
+        }
     });
 
 </script>
