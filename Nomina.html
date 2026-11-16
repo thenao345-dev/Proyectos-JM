@@ -803,9 +803,8 @@
 
         const quincenal = salarioMensual / 2;
 
-        // Ajuste para que los valores coincidan con la referencia:
-        // Mensual / 203.5 = hora
-        const valorHora = salarioMensual / 203.5;
+        // La referencia usa un divisor de 203,35 para calcular el valor hora.
+        const valorHora = salarioMensual / 203.35;
 
         const valorDia30 = salarioMensual / 30;
 
@@ -847,7 +846,6 @@
 
             } else if (desc === "Recargo nocturno") {
 
-                // Recargo nocturno del 35%
                 subtotalDevengados +=
                     (valorHora * 0.35) * cant;
 
