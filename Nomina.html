@@ -428,6 +428,54 @@
         })[caracter]);
     }
 
+    function requiereFormatoMiles(desc) {
+        if (!desc) return false;
+        if (desc === "Otros") return true;
+        return esConceptoManual(desc);
+    }
+
+    function formatearMiles(valor) {
+        if (valor === null || valor === undefined || valor === '') return '';
+
+        const valorLimpio = String(valor)
+            .replace(/\./g, '')
+            .replace(/,/g, '')
+            .replace(/\s/g, '');
+
+        if (!valorLimpio) return '';
+
+        const numero = Number(valorLimpio);
+
+        if (Number.isNaN(numero)) return '';
+
+        return numero.toLocaleString('es-CO');
+    }
+
+    function formatearCantidadInput(input, index) {
+        const desc = document.getElementById(`desc_${index}`)?.value || '';
+
+        if (!requiereFormatoMiles(desc)) {
+            calcularNomina();
+            return;
+        }
+
+        const digitos = input.value.replace(/\D/g, '');
+        input.value = digitos ? Number(digitos).toLocaleString('es-CO') : '';
+
+        calcularNomina();
+    }
+
+    function obtenerCantidad(index) {
+        const desc = document.getElementById(`desc_${index}`)?.value || '';
+        const valor = document.getElementById(`cant_${index}`)?.value || '';
+
+        const valorLimpio = requiereFormatoMiles(desc)
+            ? valor.replace(/\./g, '').replace(/,/g, '')
+            : valor;
+
+        return parseFloat(valorLimpio) || 0;
+    }
+
     // Formatear salario
     function formatearSalarioInput(input) {
         let val = input.value.replace(/\D/g, '');
@@ -510,9 +558,13 @@
                 `desc_${index}`
             ).value;
 
-            const cant = document.getElementById(
+            const cantSinFormato = document.getElementById(
                 `cant_${index}`
             ).value;
+
+            const cant = requiereFormatoMiles(desc)
+                ? cantSinFormato.replace(/\./g, '').replace(/,/g, '')
+                : cantSinFormato;
 
             const unidad = document.getElementById(
                 `unidad_${index}`
@@ -608,6 +660,16 @@
                     ? fila.unidad
                     : unidadAuto;
 
+            const usaMiles = requiereFormatoMiles(fila.desc);
+            const valorCantidad = usaMiles
+                ? formatearMiles(fila.cant)
+                : (fila.cant ?? '');
+
+            const tipoInputCantidad = usaMiles ? 'text' : 'number';
+            const eventoCantidad = usaMiles
+                ? `formatearCantidadInput(this, ${index})`
+                : 'calcularNomina()';
+
             // Campo personalizado de Otros
             let campoOtros = '';
 
@@ -660,11 +722,11 @@
 
                 <td>
                     <input
-                        type="number"
+                        type="${tipoInputCantidad}"
                         id="cant_${index}"
-                        value="${escaparHTML(fila.cant ?? '')}"
+                        value="${escaparHTML(valorCantidad)}"
                         style="width: 100%;"
-                        oninput="calcularNomina()"
+                        oninput="${eventoCantidad}"
                         placeholder="0"
                     >
                 </td>
@@ -825,9 +887,7 @@
                 `desc_${index}`
             ).value;
 
-            const cant = parseFloat(
-                document.getElementById(`cant_${index}`).value
-            ) || 0;
+            const cant = obtenerCantidad(index);
 
             if (desc === "Otros") {
 
@@ -888,9 +948,7 @@
                 `desc_${index}`
             ).value;
 
-            const cant = parseFloat(
-                document.getElementById(`cant_${index}`).value
-            ) || 0;
+            const cant = obtenerCantidad(index);
 
             let dev = 0;
             let ded = 0;
